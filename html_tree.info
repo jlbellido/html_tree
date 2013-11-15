@@ -1,0 +1,3 @@
+name = HTML Tree Export
+description = Export the html tree to a file
+core = 6.x

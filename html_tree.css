@@ -2,8 +2,10 @@
     position: absolute;
     top: 10px;
     right: 10px;
+    z-index: 9999;
 }
 
 #admin-menu ~ #html-tree {
     top: 25px;
+    z-index: 9999;
 }

@@ -4,12 +4,12 @@
  * Implementation of hook_install().
  */
 function html_tree_install() {
-    variable_set('html_tree_button', true);
+ //   variable_set('html_tree_button', true);
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function html_tree_uninstall() {
-    variable_del('html_tree_button');
+ //   variable_del('html_tree_button');
 }

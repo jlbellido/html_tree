@@ -16,24 +16,28 @@ function _html_tree_functionality(){
     var link = $('#html-tree-link');
     link.click(function(event){
         event.preventDefault();
-        var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/export';
 
+        var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/export';
         var data = {data: htmlTree()};
-        console.log(data);
+
         var request = $.ajax({
             type: 'post',
             data: data,
             url: url,
             dataType: "json",
             success: function(data){
-                window.location.href = data.redirect;
+                if(data.status){
+                    var url = data.redirect;
+                    window.open(url);
+                    //window.location.href = data.redirect;
+                }else{
+                    alert(data.output);
+                }
             }
         });
-
-
-
     });
 }
+
 function htmlTree(obj){
     var obj = obj || document.getElementsByTagName('body')[0];
     child_classes =  _format_string(jQuery(obj).attr('class'),'class');
@@ -54,6 +58,7 @@ function htmlTree(obj){
     str += "</li></ul>\n";
     return str;
 }
+
 function _format_string(string, attr){
     var output = ''
     if(string && attr){
@@ -61,4 +66,3 @@ function _format_string(string, attr){
     }
     return output;
 }
-

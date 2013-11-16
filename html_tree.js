@@ -18,11 +18,12 @@ function _html_tree_functionality(){
         event.preventDefault();
 
         var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/export';
-        var data = {data: htmlTree()};
-
+        //var data = {data: htmlTree()};
+        var data = htmlTree();
         var request = $.ajax({
             type: 'post',
-            data: data,
+            //contentType:'application/json',
+            data: {'data':JSON.stringify(data)},
             url: url,
             dataType: "json",
             success: function(data){
@@ -35,28 +36,38 @@ function _html_tree_functionality(){
                 }
             }
         });
+
     });
+
 }
 
-function htmlTree(obj){
-    var obj = obj || document.getElementsByTagName('body')[0];
-    child_classes =  _format_string(jQuery(obj).attr('class'),'class');
-    child_id = _format_string(jQuery(obj).attr('id'),'id');
 
-    var str = "<ul><li>" + obj.tagName;
-    str +=  ' ' + child_classes + ' ' + child_id;
+function htmlTree(obj){
+    if(!obj){
+        var obj = document.getElementsByTagName('body')[0];
+    }
+    obj_classes =  _format_string(jQuery(obj).attr('class'),'class');
+    obj_id = _format_string(jQuery(obj).attr('id'),'id');
+    obj_tag = obj.tagName;
+
+
+    var data = {};
+    data['id'] = obj_id;
+    data['classes'] = obj_classes;
+    data['tagName'] = obj_tag;
+
     if (obj.hasChildNodes()) {
         var child = obj.firstChild;
         while (child) {
             if (child.nodeType === 1 && child.nodeName != 'SCRIPT'){
-                str += htmlTree(child)
+                var childname = 'child_'+ new Date().getTime();
+                data[childname] = htmlTree(child));
             }
             child = child.nextSibling;
         }
     }
 
-    str += "</li></ul>\n";
-    return str;
+    return data;
 }
 
 function _format_string(string, attr){
@@ -65,4 +76,5 @@ function _format_string(string, attr){
         output = attr + ': ' + string;
     }
     return output;
+
 }

@@ -60,8 +60,8 @@ function htmlTree(obj){
         var child = obj.firstChild;
         while (child) {
             if (child.nodeType === 1 && child.nodeName != 'SCRIPT'){
-                var childname = 'child_'+ new Date().getTime();
-                data[childname] = htmlTree(child));
+                var childname = 'child_'+ Math.random()// + new Date().getTime();
+                data[childname] = htmlTree(child);
             }
             child = child.nextSibling;
         }

@@ -65,13 +65,7 @@ function html_tree_export(){
     $status = true;
     if($_POST['data']){
         $data = json_decode($_POST['data'],true);
-    error_log('datos:');
-    error_log(print_r($data,true));
         $content = get_html_struct($data);
-
-
-        error_log(print_r($content,true));
-
 
         $filename = time().'_html_tree.html.txt';
         $temp_path =file_directory_path() . '/';
@@ -111,7 +105,6 @@ function get_html_struct($data){
     }
 
     $str .= "</li></ul>\n";
-    error_log('javisr: '.$str);
     return $str;
 
 }

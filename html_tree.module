@@ -12,6 +12,7 @@ function html_tree_init() {
     if(user_access('Html Tree Export')){
         $path = drupal_get_path('module', 'html_tree');
         drupal_add_js($path .'/html_tree.js');
+        drupal_add_js($path .'/json2.js');
         drupal_add_css($path .'/html_tree.css');
     }
 
@@ -63,11 +64,20 @@ function html_tree_perm() {
 function html_tree_export(){
     $status = true;
     if($_POST['data']){
+        $data = json_decode($_POST['data'],true);
+    error_log('datos:');
+    error_log(print_r($data,true));
+        $content = get_html_struct($data);
+
+
+        error_log(print_r($content,true));
+
+
         $filename = time().'_html_tree.html.txt';
         $temp_path =file_directory_path() . '/';
         $file = $temp_path . $filename;
         $file_uri = file_create_url($file);
-        $create_file = file_put_contents($file, $_POST['data'], FILE_APPEND);
+        $create_file = file_put_contents($file, $content, FILE_APPEND);
         if ( $create_file === FALSE ) {
             $output = 'There was a problem creating the html file.';
             $status = FALSE;
@@ -82,4 +92,38 @@ function html_tree_export(){
 function html_tree_load(){
     $output = theme('html_tree');
     return drupal_json(array('status' => TRUE, 'output' => $output));
+}
+
+function get_html_struct($data){
+
+    $str = "<ul><li>";
+    if(count($data) > 3){
+        $str .= _get_html_struct_add_information($data);
+
+        foreach ($data as $key => $value) {
+            if ( stripos($key,'child_') !== FALSE ) {
+                $str .= get_html_struct($value);
+            }
+        }
+
+    }else{ //base case
+        $str .= _get_html_struct_add_information($data);
+    }
+
+    $str .= "</li></ul>\n";
+    error_log('javisr: '.$str);
+    return $str;
+
+}
+function _get_html_struct_add_information($data){
+
+    $str = '';
+    $str .= $data['tagName'];
+        if($data['id'] != ''){
+            $str .= ' id: '.$data['id'];
+        }
+        if($data['classes'] != ''){
+            $str .= ' clases: '.$data['classes'];
+        }
+    return $str;
 }

@@ -18,12 +18,10 @@ function _html_tree_functionality(){
         event.preventDefault();
 
         var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/export';
-        //var data = {data: htmlTree()};
-        var data = htmlTree();
+        var data = {'data':JSON.stringify(htmlTree())}
         var request = $.ajax({
             type: 'post',
-            //contentType:'application/json',
-            data: {'data':JSON.stringify(data)},
+            data: data,
             url: url,
             dataType: "json",
             success: function(data){
@@ -41,14 +39,13 @@ function _html_tree_functionality(){
 
 }
 
-
 function htmlTree(obj){
     if(!obj){
         var obj = document.getElementsByTagName('body')[0];
     }
-    obj_classes =  _format_string(jQuery(obj).attr('class'),'class');
-    obj_id = _format_string(jQuery(obj).attr('id'),'id');
-    obj_tag = obj.tagName;
+    var obj_classes = jQuery(obj).attr('class');
+    var obj_id = jQuery(obj).attr('id');
+    var obj_tag = obj.tagName;
 
 
     var data = {};
@@ -68,13 +65,4 @@ function htmlTree(obj){
     }
 
     return data;
-}
-
-function _format_string(string, attr){
-    var output = ''
-    if(string && attr){
-        output = attr + ': ' + string;
-    }
-    return output;
-
 }

@@ -12,7 +12,6 @@ function html_tree_init() {
     if(user_access('Html Tree Export')){
         $path = drupal_get_path('module', 'html_tree');
         drupal_add_js($path .'/html_tree.js');
-        drupal_add_js($path .'/json2.js');
         drupal_add_css($path .'/html_tree.css');
     }
 
@@ -37,6 +36,15 @@ function html_tree_menu() {
         'type' => MENU_CALLBACK,
         );
 
+    $items['admin/html_tree'] = array(
+        'title' => 'Html Tree Export',
+        'description' => 'Allow to Export the html tree (DOM) in different formats.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('html_tree_form_admin'),
+        'access callback' => 'user_access',
+        'access arguments' => array('Html Tree Export Admin'),
+        );
+
     return $items;
 }
 
@@ -58,16 +66,20 @@ function html_tree_theme() {
 * Implementation of hook_theme().
 */
 function html_tree_perm() {
-    return array('Html Tree Export');
+    return array(
+        'Html Tree Export',
+        'Html Tree Export Admin',
+        );
 }
 
 function html_tree_export(){
     $status = true;
     if($_POST['data']){
         $data = json_decode($_POST['data'],true);
+
         $content = get_html_struct($data);
 
-        $filename = time().'_html_tree.html.txt';
+        $filename = time().'_html_tree.html';
         $temp_path =file_directory_path() . '/';
         $file = $temp_path . $filename;
         $file_uri = file_create_url($file);
@@ -119,4 +131,66 @@ function _get_html_struct_add_information($data){
             $str .= ' clases: '.$data['classes'];
         }
     return $str;
+}
+
+
+
+
+function html_tree_form_admin(){
+
+    $form = array();
+
+    $form['file_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('File name'),
+        '#required' => TRUE,
+        '#default_value' => variable_get('html_tree_file_name', 'html_tree_export'),
+        );
+
+    $form['exclude_items'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Exclude items'),
+        '#description' => t('When a item has the selected values empty, the item will not added from the tree'),
+        '#options' => variable_get('html_tree_empty_items_options', array()),
+        '#default_value' => variable_get('html_tree_empty_items', array()),
+        );
+
+    $form['exclude_block'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Exclude Block'),
+        '#description' => t('The selected nodes and their children will be excluded from the tree'),
+        '#options' => variable_get('html_tree_exclude_block_options', array()),
+        '#default_value' => variable_get('html_tree_exclude_block', array()),
+        );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => 'Save',
+        );
+
+    return $form;
+}
+
+function html_tree_form_admin_submit($form, &$form_state){
+
+  $new_name = $form_state['values']['file_name'];
+  variable_set('html_tree_file_name', $new_name);
+
+    $exclude_items = array();
+    foreach ($form_state['values']['exclude_items'] as $key => $value) {
+        if ($value !== 0) {
+            $exclude_items[] = $key;
+        }
+    }
+    variable_set('html_tree_empty_items', $exclude_items);
+
+    $exclude_block= array();
+    foreach ($form_state['values']['exclude_block'] as $key => $value) {
+        if ($value !== 0) {
+            $exclude_block[] = $key;
+        }
+    }
+    variable_set('html_tree_exclude_block', $exclude_block);
+
+
 }

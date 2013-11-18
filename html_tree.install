@@ -4,12 +4,36 @@
  * Implementation of hook_install().
  */
 function html_tree_install() {
- //   variable_set('html_tree_button', true);
+
+    $items_options = array(
+            'id' => 'ID',
+            'class' => 'Class',
+            );
+    variable_set('html_tree_empty_items_options',$items_options);
+    variable_set('html_tree_empty_items',array());
+
+
+    $exclude_block_options = array(
+            'admin-menu' => 'Admin Menu bar',
+            'html-tree' => 'Html Tree items',
+            );
+    variable_set('html_tree_exclude_block_options', $exclude_block_options);
+    variable_set('html_tree_exclude_block', array('admin-menu'));
+
+
+    variable_set('html_tree_file_name', 'html_tree_export');
+
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function html_tree_uninstall() {
- //   variable_del('html_tree_button');
+
+  variable_del('html_tree_empty_items_options');
+  variable_del('html_tree_empty_items');
+  variable_del('html_tree_exclude_block_options');
+  variable_del('html_tree_exclude_block');
+  variable_del('html_tree_file_name');
+
 }

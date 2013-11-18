@@ -101,36 +101,72 @@ function html_tree_load(){
 }
 
 function get_html_struct($data){
+    $jump = _html_tree_jump_item($data);
+    $jump_block = _html_tree_jump_block($data);
+    $str = '';
 
-    $str = "<ul><li>";
-    if(count($data) > 3){
-        $str .= _get_html_struct_add_information($data);
+        $str .= (!$jump) ? "<ul><li>" : '';
+        if(count($data) > 3){
+            $str .= (!$jump) ? _get_html_struct_add_information($data) : '';
 
-        foreach ($data as $key => $value) {
-            if ( stripos($key,'child_') !== FALSE ) {
-                $str .= get_html_struct($value);
+            foreach ($data as $key => $value) {
+                if ( stripos($key,'child_') !== FALSE  && !$jump_block ) {
+                    $str .= get_html_struct($value);
+                }
             }
+
+        }else{ //base case
+            $str .= (!$jump) ? _get_html_struct_add_information($data) : '';
         }
 
-    }else{ //base case
-        $str .= _get_html_struct_add_information($data);
-    }
+        $str .= (!$jump) ? "</li></ul>\n" : '';
 
-    $str .= "</li></ul>\n";
     return $str;
 
 }
+
 function _get_html_struct_add_information($data){
 
     $str = '';
-    $str .= $data['tagName'];
+
+        $str .= $data['tag'];
         if($data['id'] != ''){
             $str .= ' id: '.$data['id'];
         }
-        if($data['classes'] != ''){
-            $str .= ' clases: '.$data['classes'];
+        if($data['class'] != ''){
+            $str .= ' class: '.$data['class'];
         }
+
     return $str;
+}
+function _html_tree_jump_block($data){
+    $jump = false;
+    $blocks = variable_get('html_tree_exclude_block',array());
+    $i = 0;
+    while($i < count($blocks) && !$jump){
+
+        if($data['id'] == $blocks[$i]){
+
+            $jump = true;
+        }
+        $i++;
+    }
+
+    return $jump;
+}
+
+function _html_tree_jump_item($data){
+    $jump = false;
+
+    $empty_items = variable_get('html_tree_empty_items', array());
+    $i = 0;
+    while($i < count($empty_items) && !$jump){
+        if($data[$empty_items[$i]] == ''){
+            $jump = true;
+        }
+        $i++;
+    }
+    return $jump;
 }
 
 

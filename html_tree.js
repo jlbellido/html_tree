@@ -50,8 +50,8 @@ function htmlTree(obj){
 
     var data = {};
     data['id'] = obj_id;
-    data['classes'] = obj_classes;
-    data['tagName'] = obj_tag;
+    data['class'] = obj_classes;
+    data['tag'] = obj_tag;
 
     if (obj.hasChildNodes()) {
         var child = obj.firstChild;

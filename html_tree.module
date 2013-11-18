@@ -76,10 +76,9 @@ function html_tree_export(){
     $status = true;
     if($_POST['data']){
         $data = json_decode($_POST['data'],true);
-
         $content = get_html_struct($data);
-
-        $filename = time().'_html_tree.html';
+        $filename = variable_get('html_tree_file_name', 'html_tree_export');
+        $filename = time().'_'.$filename.'.html';
         $temp_path =file_directory_path() . '/';
         $file = $temp_path . $filename;
         $file_uri = file_create_url($file);

@@ -13,10 +13,12 @@ $(document).ready(function() {
 });
 
 function _html_tree_functionality(){
+
     var link = $('#html-tree-link');
     link.click(function(event){
         event.preventDefault();
-
+        $('#html-tree-download').show();
+        $('#html-tree-download-link').attr('href','');
         var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/export';
         var data = {'data':JSON.stringify(htmlTree())}
         var request = $.ajax({
@@ -26,11 +28,14 @@ function _html_tree_functionality(){
             dataType: "json",
             success: function(data){
                 if(data.status){
-                    var url = data.redirect;
-                    window.open(url);
-                    //window.location.href = data.redirect;
+                    var name = data.name;
+                    var url = location.protocol +"//"+ location.host + Drupal.settings.basePath + 'html_tree/download/';
+                    $('#html-tree-download-link').attr('href',url + name);
+                    document.location = url + name;
+                    //window.open( url + name );
+                    $('#html-tree-download').show();
                 }else{
-                    alert(data.output);
+                    alert(data.message);
                 }
             }
         });
@@ -43,15 +48,11 @@ function htmlTree(obj){
     if(!obj){
         var obj = document.getElementsByTagName('body')[0];
     }
-    var obj_classes = jQuery(obj).attr('class');
-    var obj_id = jQuery(obj).attr('id');
-    var obj_tag = obj.tagName;
-
 
     var data = {};
-    data['id'] = obj_id;
-    data['class'] = obj_classes;
-    data['tag'] = obj_tag;
+    data['id'] = jQuery(obj).attr('id');
+    data['class'] = jQuery(obj).attr('class');
+    data['tag'] = obj.tagName;
 
     if (obj.hasChildNodes()) {
         var child = obj.firstChild;

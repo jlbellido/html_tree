@@ -34,7 +34,14 @@ function html_tree_menu() {
         'access callback' => 'user_access',
         'access arguments' => array('Html Tree Export'),
         'type' => MENU_CALLBACK,
-        );
+    );
+    $items['html_tree/download/%'] = array(
+        'page callback' => 'html_tree_download',
+        'page arguments' => array(2),
+        'access callback' => 'user_access',
+        'access arguments' => array('Html Tree Export'),
+        'type' => MENU_CALLBACK,
+    );
 
     $items['admin/html_tree'] = array(
         'title' => 'Html Tree Export',
@@ -83,6 +90,8 @@ function html_tree_export(){
         $file = $temp_path . $filename;
         $file_uri = file_create_url($file);
         $create_file = file_put_contents($file, $content, FILE_APPEND);
+
+
         if ( $create_file === FALSE ) {
             $output = 'There was a problem creating the html file.';
             $status = FALSE;
@@ -90,7 +99,7 @@ function html_tree_export(){
             $output = 'The file was successfuly created';
         }
     }
-    drupal_json(array('status' => $status, 'output' => $output, 'redirect' => $file_uri));
+    drupal_json(array('status' => $status, 'message' => $output, 'name' => $filename));
 
 
 }
@@ -226,6 +235,24 @@ function html_tree_form_admin_submit($form, &$form_state){
         }
     }
     variable_set('html_tree_exclude_block', $exclude_block);
+}
 
 
+function html_tree_download($filename){
+    $path = file_directory_path() . '/';
+    $file = $path .$filename;
+    if(is_file($file)){
+        header('Pragma: public');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Last-Modified: '.gmdate ('D, d M Y H:i:s', filemtime ($file)).' GMT');
+        header('Cache-Control: private',false);
+        header('Content-Type: application/force-download');
+        header('Content-Disposition: attachment; filename="'.basename($file).'"');
+        header('Content-Transfer-Encoding: binary');
+        header('Content-Length: '.filesize($file));
+        header('Connection: close');
+        readfile($file);
+        exit();
+    }
 }

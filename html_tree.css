@@ -11,3 +11,9 @@
     top: 25px;
     z-index: 9999;
 }
+
+#html-tree-download {
+    background: white;
+    color:#000000;
+    display: none;
+}

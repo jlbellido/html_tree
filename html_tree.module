@@ -15,6 +15,7 @@ function html_tree_init() {
         drupal_add_css($path .'/html_tree.css');
     }
 
+  //  html_tree_parse_rules();
 }
 
 /**
@@ -85,7 +86,7 @@ function html_tree_export(){
         $data = json_decode($_POST['data'],true);
         $content = get_html_struct($data);
         $filename = variable_get('html_tree_file_name', 'html_tree_export');
-        $filename = time().'_'.$filename.'.html';
+        $filename = $filename.'_'.time().'.html';
         $temp_path =file_directory_path() . '/';
         $file = $temp_path . $filename;
         $file_uri = file_create_url($file);
@@ -108,53 +109,93 @@ function html_tree_load(){
     return drupal_json(array('status' => TRUE, 'output' => $output));
 }
 
-function get_html_struct($data){
+function get_html_struct($data, $rules = null){
     $jump = _html_tree_jump_item($data);
     $jump_block = _html_tree_jump_block($data);
+    if(!$rules){
+        $rules = html_tree_rules_loader();
+    }
+
     $str = '';
+    $str .= (!$jump) ? "<ul><li>\n" : '';
 
-        $str .= (!$jump) ? "<ul><li>" : '';
-        if(count($data) > 3){
-            $str .= (!$jump) ? _get_html_struct_add_information($data) : '';
 
-            foreach ($data as $key => $value) {
-                if ( stripos($key,'child_') !== FALSE  && !$jump_block ) {
-                    $str .= get_html_struct($value);
-                }
+
+    if(count($data) > 3){
+
+        $str .= (!$jump) ? _get_html_struct_add_information($data, $rules) : '';
+
+        $restore_rules = $rules;
+        $rules = _html_tree_status_trigger($data, $rules);
+        foreach ($data as $key => $value) {
+            if ( stripos($key,'child_') !== FALSE  && !$jump_block ) {
+                $str .= get_html_struct($value,$rules);
             }
-
-        }else{ //base case
-            $str .= (!$jump) ? _get_html_struct_add_information($data) : '';
         }
+    }else{ //base case
+        $str .= (!$jump) ? _get_html_struct_add_information($data, $rules) : '';
+    }
 
-        $str .= (!$jump) ? "</li></ul>\n" : '';
+    $str .= (!$jump) ? "</li></ul>\n" : '';
 
     return $str;
 
 }
 
-function _get_html_struct_add_information($data){
+function _html_tree_status_trigger($data, $rules){
+    $i = 0;
+    foreach($rules as $key => $rule){
+        if($key !== 'status'){
+            if($rule['trigger'][1] == $data['id']){
+                $rules['status'][$i] = true;
+            }
+        }
+        $i++;
+    }
+    return $rules;
+}
+
+function _get_html_struct_add_information($data, $rules){
+    for($i = 0; $i<count($rules['status']); $i++){
+
+        if($rules['status'][$i]){
+            if($rules[$i]['when'][0] == 'id'){
+                if(_strstart($data['id'], $rules[$i]['when'][1] )){
+                    if($rules[$i]['replaceby'][0] = 'id'){
+                        $data['id'] = $rules[$i]['replaceby'][1];
+                    }elseif($rules[$i]['replaceby'][0] = 'class'){
+                        $data['class'] = $rules[$i]['replaceby'][1];
+                    }
+                }
+            }elseif($rules[$i]['when'][0] == 'id'){
+                //TODO implements class support
+            }
+        }
+    }
 
     $str = '';
 
-        $str .= $data['tag'];
-        if($data['id'] != ''){
-            $str .= ' id: '.$data['id'];
-        }
-        if($data['class'] != ''){
-            $str .= ' class: '.$data['class'];
-        }
+    $str .= $data['tag'];
+
+    if($data['id'] != ''){
+        $str .= ' id: '.$data['id'];
+    }
+
+    if($data['class'] != ''){
+        $str .= ' class: '.$data['class'];
+    }
+
+    if($str != '') $str .= "\n";
 
     return $str;
 }
 function _html_tree_jump_block($data){
     $jump = false;
     $blocks = variable_get('html_tree_exclude_block',array());
+
     $i = 0;
     while($i < count($blocks) && !$jump){
-
         if($data['id'] == $blocks[$i]){
-
             $jump = true;
         }
         $i++;
@@ -189,7 +230,7 @@ function html_tree_form_admin(){
         '#title' => t('File name'),
         '#required' => TRUE,
         '#default_value' => variable_get('html_tree_file_name', 'html_tree_export'),
-        );
+    );
 
     $form['exclude_items'] = array(
         '#type' => 'checkboxes',
@@ -205,7 +246,14 @@ function html_tree_form_admin(){
         '#description' => t('The selected nodes and their children will be excluded from the tree'),
         '#options' => variable_get('html_tree_exclude_block_options', array()),
         '#default_value' => variable_get('html_tree_exclude_block', array()),
-        );
+    );
+
+    $form['rules'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Rules'),
+        '#required' => false,
+        '#default_value' => variable_get('html_tree_rules', ''),
+    );
 
     $form['submit'] = array(
         '#type' => 'submit',
@@ -217,8 +265,8 @@ function html_tree_form_admin(){
 
 function html_tree_form_admin_submit($form, &$form_state){
 
-  $new_name = $form_state['values']['file_name'];
-  variable_set('html_tree_file_name', $new_name);
+    $new_name = $form_state['values']['file_name'];
+    variable_set('html_tree_file_name', trim($new_name));
 
     $exclude_items = array();
     foreach ($form_state['values']['exclude_items'] as $key => $value) {
@@ -235,6 +283,21 @@ function html_tree_form_admin_submit($form, &$form_state){
         }
     }
     variable_set('html_tree_exclude_block', $exclude_block);
+
+
+    $rules = $form_state['values']['rules'];
+    if($rules){
+        variable_set('html_tree_rules',$rules);
+    }
+
+}
+function html_tree_form_admin_validate($form, &$form_state){
+
+    $new_name = $form_state['values']['file_name'];
+    if(preg_match('/[^a-z_\-0-9]/i', trim($new_name))){
+        form_set_error('file_name', 'Only alphanumeric character are allowed.');
+
+    }
 }
 
 
@@ -255,4 +318,44 @@ function html_tree_download($filename){
         readfile($file);
         exit();
     }
+}
+
+function html_tree_parse_rules($rule = null){
+    $rule = explode(';', $rule);
+    $struct = array();
+    foreach($rule as $value){
+        $value = str_replace('}', '', $value);
+        $tmp = explode('{', $value);
+        $tmp[1] = explode(':', $tmp[1]);
+
+        $struct[$tmp[0]] = array($tmp[1][0],$tmp[1][1]);
+    }
+    return $struct;
+}
+
+function html_tree_rules_loader(){
+
+    $tmp = variable_get('html_tree_rules', '');
+    $tmp = explode("\r\n", $tmp);
+    $rules = array();
+    foreach($tmp as $rule){
+        $rules[] = html_tree_parse_rules($rule);
+    }
+
+    $rules['status'] = _html_tree_rules_status($rules);
+    return $rules;
+}
+
+function _html_tree_rules_status($rules){
+    $status = array();
+    for( $i=0; $i<count($rules); $i++){
+        $status[$i] = false;
+    }
+
+    return $status;
+}
+
+function _strstart($haystack, $needle)
+{
+    return $needle === "" || strpos($haystack, $needle) === 0;
 }
